@@ -28,9 +28,13 @@ There is a day video and a corresponding night video for each person's eyes. The
 
 In day mode, videos play from the 15 second mark and fade to the next video 15 seconds before their end. At night, videos play back to back until a sensor event occurs. At this time a fade to the head of the corresponding day video takes place, which then plays through its falling asleep phase before fading back to the corresponding night video.
 
-## Sensor
+### Sensor
 
 The intended unit is the X-Band Motion Detector from Parallax. This doppler radar detector has been chosen because it is able to operate behind glass which is required for our application. This sensor operates by sending a digital HIGH at a frequency which increases as an object comes closer of moves past with some velocity. 
+
+### Software
+
+The system has been developed with Processing 1.5.1 and Arduino 1.0.5. Processing draws on GSVideo which is included in this repo.
 
 ## Reference
 
@@ -38,4 +42,6 @@ The intended unit is the X-Band Motion Detector from Parallax. This doppler rada
 - [WS2801 LED pixel modules](http://led-studien.de/docs/RGB-Pixel_Datenblatt.pdf)
 - [X-Band Motion Detector](http://www.parallax.com/product/32213)
 - [SunriseSunset Java Lib](https://github.com/mikereedell/sunrisesunsetlib-java)
+- [Processing 1.5.1](https://processing.org/download/?processing)
+- [Arduino 1.0.5](https://code.google.com/p/arduino/)
  
