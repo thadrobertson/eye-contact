@@ -34,8 +34,8 @@ The intended unit is the X-Band Motion Detector from Parallax. This doppler rada
 
 ## Reference
 
-[Teensy 2.0](http://www.pjrc.com/store/teensy.html)
-[WS2801 LED pixel modules](http://led-studien.de/docs/RGB-Pixel_Datenblatt.pdf)
-[X-Band Motion Detector](http://www.parallax.com/product/32213)
-[SunriseSunset Java Lib](https://github.com/mikereedell/sunrisesunsetlib-java)
+- [Teensy 2.0](http://www.pjrc.com/store/teensy.html)
+- [WS2801 LED pixel modules](http://led-studien.de/docs/RGB-Pixel_Datenblatt.pdf)
+- [X-Band Motion Detector](http://www.parallax.com/product/32213)
+- [SunriseSunset Java Lib](https://github.com/mikereedell/sunrisesunsetlib-java)
  
