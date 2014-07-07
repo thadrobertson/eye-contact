@@ -42,18 +42,34 @@ void setInPoint () {
   if (debug) println("IN");
 }
 
-
+void sensorCheck(){
+ if (arduino) while(port.available() > 0) state = port.read();       
+ if (state == 72) {
+   int timeNow = millis();
+   if (timeNow - timerStart > sensorPoll) {
+     port.clear();
+     if (debug) println("Sensor Detected");
+     timerStart = millis(); // reset the timer
+     sensorDetected = true;
+     wakeUpSeq = true;
+     state = 0;
+   } 
+ }
+}
+             
+             
 void updateTime() {
     if (debug) println(date);
 
   if (debug) println("Time update");
   date = new Date();
-  ss = new SunriseSunset(49.70f, 7.30f, date, TimeZone.getTimeZone("CEST"));
-  if (ss.isDaytime()) {
-    dayFirstRun=true;
-  } else {
-    nightFirstRun=true;
-  } 
+//  ss = new SunriseSunset(49.70f, 7.30f, date, TimeZone.getTimeZone("CEST"));
+  ss = new SunriseSunset(lat, lon, date, TimeZone.getTimeZone(tzone));
+//  if (ss.isDaytime()) {
+//    dayFirstRun=true;
+//  } else {
+//    nightFirstRun=true;
+//  } 
       if (debug) println(date);
       if (debug) println(ss.getSunrise());
 
@@ -65,26 +81,75 @@ void runVideo(PImage srcMovie){
     driveLEDs(scaled);
 }
 
+
+//void crossFade(PImage srcMovie, PImage destMovie){
+//    // fade out
+//    tint(255,255-fadeFloor);         
+//    scaled.copy(srcMovie,cropX, cropY, cropWidth, cropHeight, 0, 0, scaled.width, scaled.height);
+//    image(scaled,0,0,width,height);
+//     driveLEDs(scaled);
+//    // store the fading out layer of the image
+//   // fadeBuffer = get();
+//    // fade in
+//    tint(255,fadeFloor);           
+//    scaled.copy(destMovie,cropX, cropY, cropWidth, cropHeight, 0, 0, scaled.width, scaled.height);
+//    image(scaled,0,0,width,height);
+//      driveLEDs(scaled);
+//   // grab the fading in layer of the image
+//  //  LEDout = get();
+//    // create a blend for output to the LEDs
+//    // untested with a large array -- suspect I will have to play with different blend modes
+//  //  LEDout.blend(fadeBuffer,0,0,width,height,0,0,width,height,SOFT_LIGHT);
+//   // driveLEDs(LEDout);
+//    // alter the fade ratio
+//    fadeFloor += fadeRate;  
+//}
+
 void crossFade(PImage srcMovie, PImage destMovie){
-    // fade out
-    tint(255,255-fadeFloor);         
-    scaled.copy(srcMovie,cropX, cropY, cropWidth, cropHeight, 0, 0, scaled.width, scaled.height);
-    image(scaled,0,0,width,height);
-    // store the fading out layer of the image
-    fadeBuffer = get();
-    // fade in
-    tint(255,fadeFloor);           
-    scaled.copy(destMovie,cropX, cropY, cropWidth, cropHeight, 0, 0, scaled.width, scaled.height);
-    image(scaled,0,0,width,height);
-    // grab the fading in layer of the image
-    LEDout = get();
-    // create a blend for output to the LEDs
-    // untested with a large array -- suspect I will have to play with different blend modes
-    LEDout.blend(fadeBuffer,0,0,width,height,0,0,width,height,BLEND);
-    driveLEDs(LEDout);
-    // alter the fade ratio
-    fadeFloor += fadeRate;  
+      // *** srcMovie no longer required - lose the reference and refactor
+      
+      // stick the current image into a buffer;
+      fadeBuffer = get();
+      
+      // fade in the destination movie
+      tint(255,fadeFloor);         
+      scaled.copy(destMovie,cropX, cropY, cropWidth, cropHeight, 0, 0, scaled.width, scaled.height);
+      
+      // send to the computer screen
+      image(scaled,0,0,width,height);
+      
+      // create a blend for output to the LEDs
+      LEDout = scaled;
+      LEDout.blend(fadeBuffer,0,0,width,height,0,0,width,height,DARKEST);
+
+      // send to the LEDs
+      driveLEDs(LEDout);
+
+      // alter the fade ratio
+      fadeFloor += fadeRate;  
+
 }
+
+//void crossFade(PImage srcMovie, PImage destMovie){
+//    // fade out
+//    tint(255,255-fadeFloor);         
+//    scaled.copy(srcMovie,cropX, cropY, cropWidth, cropHeight, 0, 0, scaled.width, scaled.height);
+//    image(scaled,0,0,width,height);
+//    // store the fading out layer of the image
+//    fadeBuffer = get();
+//    // fade in
+//    tint(255,fadeFloor);           
+//    scaled.copy(destMovie,cropX, cropY, cropWidth, cropHeight, 0, 0, scaled.width, scaled.height);
+//    image(scaled,0,0,width,height);
+//    // grab the fading in layer of the image
+//    LEDout = get();
+//    // create a blend for output to the LEDs
+//    // untested with a large array -- suspect I will have to play with different blend modes
+//    LEDout.blend(fadeBuffer,0,0,width,height,0,0,width,height,SOFT_LIGHT);
+//    driveLEDs(LEDout);
+//    // alter the fade ratio
+//    fadeFloor += fadeRate;  
+//}
 
 void driveLEDs(PImage LEDout){
   LEDout.loadPixels();
@@ -92,7 +157,6 @@ void driveLEDs(PImage LEDout){
 }
 
 void showOSD(){
-  if (osd) { 
      // create some feedback text on the preview screen
      fill(200, 200, 200);
      if (daytime) {
@@ -114,7 +178,6 @@ void showOSD(){
      text("Sunrise: "+ss.getSunrise(), 10, 180);
      fill(210, 180, 245);
      text("Sunset: "+ss.getSunset(), 10, 210);
-  }
 }
 
 

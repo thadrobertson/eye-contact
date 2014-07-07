@@ -4,8 +4,12 @@ GSMovie[] nightVideoFiles = new GSMovie[0];
 int[] dayTimeDuration;
 int[] nightTimeDuration;
 
+//String dayVideoFileListTxt = "dayVideoFileList.txt.clr";
+//String nightVideoFileListTxt = "nightVideoFileList.txt.clr";
 String dayVideoFileListTxt = "dayVideoFileList.txt";
 String nightVideoFileListTxt = "nightVideoFileList.txt";
+//String dayVideoFileListTxt = "sensorDay.txt";
+//String nightVideoFileListTxt = "sensorNight.txt";
 
 String[] dayVideoFileList = new String[0];
 String[] nightVideoFileList = new String[0];

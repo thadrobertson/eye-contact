@@ -1,5 +1,49 @@
 void keyPressed() {
+  
+        if(key == 'R'){
+          Rmax += 1;
+          if (Rmax >= 255) Rmax = 255;
+          if (arduino) LEDmatrix.setGamma(Rmin, Rmax, Rgam, Gmin, Gmax, Ggam, Bmin, Bmax, Bgam);
+          println(Rmax);
+        }  
+       
+          if(key == 'r'){
+          Rmax -= 1;
+          if (Rmax <= 0) Rmax = 0;
+          if (arduino) LEDmatrix.setGamma(Rmin, Rmax, Rgam, Gmin, Gmax, Ggam, Bmin, Bmax, Bgam);
+                    println(Rmax);
+
+        }  
+       
+        
+    //   }
+       
+       
   if (allowKeys) {
+    
+        if (key == CODED){
+      if (keyCode == UP) {
+
+       }
+      if (keyCode == DOWN) { 
+       // if (key == 'r'){
+         if(keyEvent.isShiftDown()){
+           println("RRR");
+       }
+       // }
+        
+        }
+        //if (arduino) LEDmatrix.setGamma(Rmin, Rmax, Rgam, Gmin, Gmax, Ggam, Bmin, Bmax, Bgam);
+
+      }
+      if (keyCode == LEFT) { 
+      
+      }
+      if (keyCode == RIGHT) { 
+     
+      }
+    }
+    
 
     // Skip to n seconds before end of currently playing video
     if(key == 'n' | key == 'N'){
@@ -55,10 +99,14 @@ void keyPressed() {
     if(key == 's' | key == 'S'){
       if (!daytime) {
         if (!sensorDetected) {
-          timerStart = millis();
-          sensorDetected = true;
-          wakeUpSeq = true;
-          if (debug) println("Simulated sensor input");
+          if (okToSense) {
+            timerStart = millis();
+            sensorDetected = true;
+            wakeUpSeq = true;
+            if (debug) println("Simulated sensor input");
+          } else {
+            if (debug) println("In tail of asleep awake sequence. Can't sense.");          
+          }
         } else {
           timerStart = millis();
           if (debug) println("Sensor already triggered");
@@ -68,4 +116,4 @@ void keyPressed() {
       }           
     }
   }
-}
+
