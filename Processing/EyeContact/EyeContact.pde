@@ -1,4 +1,4 @@
-// v0.9
+// v0.92
 
 // Acknowledgements
 //---------------
@@ -19,7 +19,7 @@ import ws2801.*;
 
 // ------------- Configuration variables -------------------------------------
 
-boolean          arduino      = false;  // set to false if an Arduino is not hooked up
+boolean          arduino      = true;  // set to false if an Arduino is not hooked up
 boolean          stats        = false;  // print realtime framerate and current use stats to the console
 boolean          allowKeys    = true;  // flag to allow for keybord control. See 'keys' file
 boolean          debug        = true;  // print info to the console
@@ -31,21 +31,32 @@ static final int arrayWidth   = 38,     // Width of LED array
                  imgScale     = 30;     // Size of pixels in the displayed preview
                  
 
-float            fadeRate     = 5;    // bigger number for faster fades.
+float            fadeRate     = 1;    // bigger number for faster fades.
 float            skipToTime   = 17.0;   // seconds before end of movie that 'n' key should skip to.
 float            NightSkipToTime = 6.0;   // seconds before end of movie that 'n' key should skip to. 
-float            dayMovieIn   = 15.0;   // seconds from the head of a daytime video that we should start playing from                                        
-int              dayMovieOut  = 15;     // seconds from the end of a daytime video that we should transition out
-int              nightMovieOut= 4;      // seconds before end of movie that asleep, awaken or fall asleep transition should trigger
+float            dayMovieIn      = 15.0;   // seconds from the head of a daytime video that we should start playing from                                        
+int              dayMovieOut     = 15;     // seconds from the end of a daytime video that we should transition out
+int              nightMovieOut = 4;      // seconds before end of movie that asleep, awaken or fall asleep transition should trigger
 int              sensorPoll   = 5000;   // milliseconds between polling the sensor. This deals with the problem of repeated sensor triggers.                                        
-float            lat          = 49.70; // latidude for sunrise/sunset calcs
-float            lon          = 7.30; // longatude ditto
-String           tzone        = "CEST"; // timezone code
+float            lat          = 51.5072; // latidude for sunrise/sunset calcs
+float            lon          = 0.1275; // longatude ditto
+String           tzone        = "GMT"; // timezone code
 
 
 // ------------- Shouldn't need to change anything below this line -------------
 
+int              Rmin         = 0;
+int              Rmax         = 255;
+float            Rgam         = 2.3;
+int              Gmin         = 0;
+int              Gmax         = 255;
+float            Ggam         = 2.2;
+int              Bmin         = 0;
+int              Bmax         = 200;
+float            Bgam        = 2.4;
+
 boolean          daytime      = true;   // time of day mode to be used on startup
+boolean          okToSense    = true;  // dirty little hack used in front of sensorCheck() to prevent continious showing ofthe same sleep-awake-sleep sequence
 
 Serial           port;
 WS2801           LEDmatrix;
@@ -82,6 +93,10 @@ float            srcAspect, dstAspect;
 Date date = new Date();
 SunriseSunset ss = new SunriseSunset(lat, lon, date, TimeZone.getTimeZone(tzone));
   
+//  static public void main(String args[]) {
+// PApplet.main(new String[] {"--present-stop-color=#000000", "EyeContact" });
+//} 
+
 void setup() { 
   size(arrayWidth * imgScale, arrayHeight * imgScale, JAVA2D);
   frameRate(60);
@@ -108,11 +123,11 @@ void setup() {
   // LEDmatrix.useShortWrites = true;
   
   // Adjust color balance; you may need to tweak this for best output.
-  if (arduino) LEDmatrix.setGamma(0, 255, 2.3, 0, 255, 2.2, 0, 200, 2.4);
+  if (arduino) LEDmatrix.setGamma(Rmin, Rmax, Rgam, Bmin, Bmax, Bgam, Gmin, Gmax, Ggam);
   
   // Generate zigzag remap array to reconstitute image into LED order.
   if (arduino)   remap = LEDmatrix.zigzag(arrayWidth, arrayHeight,
-   WS2801.START_BOTTOM | WS2801.START_LEFT | WS2801.ROW_MAJOR);
+    WS2801.START_BOTTOM | WS2801.START_LEFT | WS2801.COL_MAJOR);
    
   // set some intial movie numbers
   currentMovie = getNextMovie();
@@ -121,12 +136,14 @@ void setup() {
 
 
 void draw() {
-  
+
   // check if its actually daytime
-  if (useSunset && ss.isDaytime()) {
-    daytime=true;
-  } else {
-    daytime=false;
+  if (useSunset) {
+    if(ss.isDaytime()){
+      daytime=true;
+    } else {
+      daytime=false;
+    }
   }
   
   //check for day mode
@@ -194,9 +211,9 @@ void draw() {
         if (fadeFloor >= 255){ // out of bounds for tint() so fade is finished
           nightVideoFiles[currentMovie].stop();
           movieTransitionPoint = dayTimeDuration[currentMovie]-nightMovieOut;
-          dayVideoFiles[currentMovie].play();
-          while(dayVideoFiles[currentMovie].ready() == false);
-          dayVideoFiles[currentMovie].goToBeginning();
+          //dayVideoFiles[currentMovie].play();
+          //while(dayVideoFiles[currentMovie].ready() == false);
+          //dayVideoFiles[currentMovie].goToBeginning();
           fadeFloor  = 0;
           wakeUpSeq = false;
           awakeSeq = true;
@@ -207,6 +224,7 @@ void draw() {
       
       if (awakeSeq) {
           runVideo(dayVideoFiles[currentMovie]);       
+         //if (int(dayVideoFiles[currentMovie].time()) > 10){
          if (int(dayVideoFiles[currentMovie].time()) > movieTransitionPoint){
            awakeSeq = false;
            fallAsleepSeq = true;
@@ -229,6 +247,7 @@ void draw() {
           timerStart = millis(); // reset the sensor time and give a few more seconds of alseep play
           fallAsleepSeq = false;
           sensorDetected = false;
+          okToSense = false;
           state = 0;
           if (debug) println("Awake to asleep fade finished");
         }       
@@ -252,30 +271,22 @@ void draw() {
           runVideo(nightVideoFiles[currentMovie]);  
           
              // check for sensor
-             if (arduino) while(port.available() > 0) state = port.read();       
-             if (state == 72) {
-               int timeNow = millis();
-               if (timeNow - timerStart > sensorPoll) {
-                 port.clear();
-                 timerStart = millis(); // reset the timer
-                 sensorDetected = true;
-                 wakeUpSeq = true;
-                 state = 0;
-               } 
-             }
+             if (okToSense) sensorCheck();
+             
              if (int(nightVideoFiles[currentMovie].time()) > movieTransitionPoint){
                  // get the destination video rolling           
                  nightVideoFiles[nextMovie].play();
                  nightVideoFiles[nextMovie].goToBeginning(); 
-                 while(nightVideoFiles[nextMovie].ready() == false);
                  movieTransitionPoint = nightTimeDuration[nextMovie]-nightMovieOut;
+                 while(nightVideoFiles[nextMovie].ready() == false);
                  fade = true;
-                 if (debug) println("Fade initiated");       
+                 if (debug) println("Fade initiated"); 
+                 okToSense = true;      
               }   
             } // end if-fade   
      } // end if-sensor-detected      
    }   
-  showOSD(); 
+  if (osd) showOSD(); 
   if (arduino && stats) LEDmatrix.printStats();
 }
 
